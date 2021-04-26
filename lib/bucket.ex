@@ -41,7 +41,7 @@ defmodule Fridge.Bucket do
 
   def put_all(bucket, receipt) do
     processor = fn state ->
-      Map.merge(state, receipt, fn _k, v1, v2 -> v1 - v2 end)
+      Map.merge(state, receipt, fn _k, v1, v2 -> v1 + v2 end)
     end
 
     Agent.update(bucket, processor)

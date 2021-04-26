@@ -70,11 +70,19 @@ defmodule Fridge.BucketTest do
   end
 
   describe "put_all" do
-    test "should take out all items", %{bucket: bucket} do
+    test "should put all items", %{bucket: bucket} do
       receipt = %{"milk" => 2, "egg" => 2}
       assert Fridge.Bucket.put_all(bucket, receipt) == :ok
       assert Fridge.Bucket.count(bucket, "milk") == 2
       assert Fridge.Bucket.count(bucket, "egg") == 2
+    end
+
+    test "should put all items again", %{bucket: bucket} do
+      receipt = %{"milk" => 2, "egg" => 2}
+      assert Fridge.Bucket.put_all(bucket, receipt) == :ok
+      assert Fridge.Bucket.put_all(bucket, receipt) == :ok
+      assert Fridge.Bucket.count(bucket, "milk") == 4
+      assert Fridge.Bucket.count(bucket, "egg") == 4
     end
   end
 
