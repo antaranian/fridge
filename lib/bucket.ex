@@ -45,4 +45,40 @@ defmodule Fridge.Bucket do
 
     Agent.get_and_update(bucket, taker)
   end
+
+  def put_all(bucket, receipt) do
+    processor = fn state ->
+      with items <- Map.keys(receipt),
+           updated <-
+             state
+             |> Map.take(items)
+             |> Map.merge(receipt, fn _k, v1, v2 -> v1 - v2 end),
+           do: Map.merge(state, updated)
+    end
+
+    Agent.update(bucket, processor)
+  end
+
+  def get_all(bucket, receipt) do
+    processor = fn state ->
+      leftover =
+        with items <- Map.keys(receipt) do
+          state
+          |> Map.take(items)
+          |> Map.merge(receipt, fn _k, v1, v2 -> v1 - v2 end)
+        end
+
+      is_valid_leftover? =
+        Map.values(leftover)
+        |> Enum.map(fn x -> x >= 0 end)
+        |> Enum.reduce(true, fn p, acc -> p && acc end)
+
+      case is_valid_leftover? do
+        true -> {:ok, leftover}
+        false -> {:err, state}
+      end
+    end
+
+    Agent.get_and_update(bucket, processor)
+  end
 end
