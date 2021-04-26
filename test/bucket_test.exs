@@ -94,7 +94,7 @@ defmodule Fridge.BucketTest do
     end
 
     test "should take none if not enough", %{bucket: bucket} do
-      receipt = %{"milk" => 2, "egg" => 12}
+      receipt = %{"milk" => 2, "egg" => 12, "tomato" => 2}
       assert Fridge.Bucket.get_all(bucket, receipt) == :err
       assert Fridge.Bucket.count(bucket, "milk") == 5
       assert Fridge.Bucket.count(bucket, "egg") == 10

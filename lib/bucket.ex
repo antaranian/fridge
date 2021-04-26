@@ -28,32 +28,20 @@ defmodule Fridge.Bucket do
   Gets given amount of item from bucket if available
   """
   def get(bucket, item, amount \\ 1) do
-    taker = fn state ->
-      Map.get_and_update(state, item, fn count ->
-        cond do
-          count == nil ->
-            {:err, 0}
-
-          count >= amount ->
-            {:ok, count - amount}
-
-          count < amount ->
-            {:err, count}
-        end
+    processor = fn state ->
+      Map.get_and_update(state, item, fn
+        nil -> {:err, 0}
+        count when count >= amount -> {:ok, count - amount}
+        count when count < amount -> {:err, count}
       end)
     end
 
-    Agent.get_and_update(bucket, taker)
+    Agent.get_and_update(bucket, processor)
   end
 
   def put_all(bucket, receipt) do
     processor = fn state ->
-      with items <- Map.keys(receipt),
-           updated <-
-             state
-             |> Map.take(items)
-             |> Map.merge(receipt, fn _k, v1, v2 -> v1 - v2 end),
-           do: Map.merge(state, updated)
+      Map.merge(state, receipt, fn _k, v1, v2 -> v1 - v2 end)
     end
 
     Agent.update(bucket, processor)
@@ -61,19 +49,9 @@ defmodule Fridge.Bucket do
 
   def get_all(bucket, receipt) do
     processor = fn state ->
-      leftover =
-        with items <- Map.keys(receipt) do
-          state
-          |> Map.take(items)
-          |> Map.merge(receipt, fn _k, v1, v2 -> v1 - v2 end)
-        end
+      leftover = Map.merge(state, receipt, fn _k, v1, v2 -> v1 - v2 end)
 
-      is_valid_leftover? =
-        Map.values(leftover)
-        |> Enum.map(fn x -> x >= 0 end)
-        |> Enum.reduce(true, fn p, acc -> p && acc end)
-
-      case is_valid_leftover? do
+      case Map.values(leftover) |> Enum.all?(fn x -> x >= 0 end) do
         true -> {:ok, leftover}
         false -> {:err, state}
       end
